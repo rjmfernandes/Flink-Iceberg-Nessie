@@ -11,13 +11,7 @@ docker compose up -d
 Start Flink SQL Client:
 
 ```shell
-docker-compose run sql-client
-```
-
-Check the ip for the storage minio container (in a separate terminal tab):
-
-```shell
-docker inspect `docker ps |grep 'storage'|sed s/' .*'//g` | grep "IPAddress"
+docker compose run sql-client
 ```
 
 Create the Iceberg catalog (replacing the IP by the one found before):
@@ -31,7 +25,7 @@ CREATE CATALOG iceberg WITH ('type'='iceberg',
 'ref'='main',
 'client.assume-role.region'='us-east-1',
 'warehouse' = 's3://warehouse',
-'s3.endpoint'='http://172.24.0.3:9000');
+'s3.endpoint'='http://storage:9000');
 ```
 
 Let's use this catalog:

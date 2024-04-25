@@ -1,9 +1,6 @@
 ###########################################
 # Flink - Iceberg - Nessie Setup
 ###########################################
-
-version: "3"
-
 services:
   # Nessie Catalog Server Using In-Memory Store
   catalog:
@@ -25,6 +22,8 @@ services:
       - MINIO_REGION=us-east-1
     networks:
       iceberg-nessie-flink-net:
+        aliases:
+          - warehouse.storage
     ports:
       - 9001:9001
       - 9000:9000
