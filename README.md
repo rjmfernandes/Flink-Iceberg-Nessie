@@ -11,7 +11,7 @@ docker compose up -d
 Start Flink SQL Client:
 
 ```shell
-docker-compose run sql-client
+docker compose run sql-client
 ```
 
 Check the ip for the storage minio container (in a separate terminal tab):
