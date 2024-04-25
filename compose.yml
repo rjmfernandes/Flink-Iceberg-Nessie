@@ -1,9 +1,6 @@
 ###########################################
 # Flink - Iceberg - Nessie Setup
 ###########################################
-
-version: "3"
-
 services:
   # Nessie Catalog Server Using In-Memory Store
   catalog:
