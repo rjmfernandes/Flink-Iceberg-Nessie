@@ -85,6 +85,20 @@ Check:
 - https://projectnessie.org/
 - https://iceberg.apache.org/docs/1.5.0/nessie/
 
+## Spark Iceberg
+
+As a final extra you can also execute:
+
+```shell
+docker compose logs spark-iceberg|grep '127\.0\.0\.1\:8888.*token'
+```
+
+And open the link displayed on your browser should be of the format:  http://127.0.0.1:8888/lab?token=8d518deb8849abf4524c7e04f588a2dbe6664d354d4cb733
+
+Navigate to the Jupyter notebook you will find on the folder `work` to test accessing the iceberg tables from Spark.
+
+The Spark UI while executing the notebook will be available at http://localhost:4040/ 
+
 ## Cleanup
 
 ```shell

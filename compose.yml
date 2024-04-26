@@ -2,6 +2,25 @@
 # Flink - Iceberg - Nessie Setup
 ###########################################
 services:
+  # Spark Notebook Server
+  spark-iceberg:
+    image: jupyter/all-spark-notebook
+    container_name: spark-iceberg
+    networks:
+      iceberg-nessie-flink-net:
+    depends_on:
+      - catalog
+      - storage
+    volumes:
+      - ./work:/home/jovyan/work
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+    ports:
+      - 8888:8888
+      - 4040:4040
   # Nessie Catalog Server Using In-Memory Store
   catalog:
     image: projectnessie/nessie
@@ -55,7 +74,7 @@ services:
       "
   # Flink Job Manager
   flink-jobmanager:
-    image: alexmerced/flink-iceberg:latest
+    build: ./flink
     ports:
       - "8081:8081"
     command: jobmanager
@@ -73,7 +92,7 @@ services:
       - S3_PATH_STYLE_ACCESS=true
   # Flink Task Manager
   flink-taskmanager:
-    image: alexmerced/flink-iceberg:latest
+    build: ./flink
     depends_on:
       - flink-jobmanager
     command: taskmanager
@@ -92,7 +111,7 @@ services:
       - S3_ENDPOINT=http://minio.storage:9000
       - S3_PATH_STYLE_ACCESS=true
   sql-client:
-    image: alexmerced/flink-iceberg:latest
+    build: ./flink
     command: bin/sql-client.sh
     networks:
       iceberg-nessie-flink-net:
