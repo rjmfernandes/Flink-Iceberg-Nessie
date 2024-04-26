@@ -2,13 +2,6 @@
 FROM flink:1.16.1-scala_2.12
 
 ###############################################
-## Add Startup Script And Make Executable
-###############################################
-
-# COPY ./initiate-flink.sh /opt/flink/bin/initiate-vars.sh
-# RUN chmod +x /opt/flink/bin/initiate-vars.sh
-
-###############################################
 ## Download Neccessary Jars to Flink Class Path
 ###############################################
 
@@ -34,5 +27,3 @@ RUN curl -L https://repo1.maven.org/maven2/software/amazon/awssdk/bundle/2.20.18
 RUN apt update && apt install -y nano
 
 CMD ["./bin/start-cluster.sh"]
-
-## docker run --name flink-iceberg -p 8081:8081 -it alexmerced/flink-iceberg
