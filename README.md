@@ -343,7 +343,7 @@ Note:
 
 # 4 - Spark 
 
-As an example of consuming our Iceberg tables from another tool we use Spark. And access it from the Jupyter instance levergaging pyspark. For opening the Jupyter notebook server let's get the link with the token. For that we check the container log in another shell:
+As an example of consuming our Iceberg tables from another tool we use Spark. And access it from the Jupyter instance leveraging pyspark. For opening the Jupyter notebook server let's get the link with the token. For that we check the container log in another shell:
 
 ```shell
 docker compose logs spark-iceberg|grep '127\.0\.0\.1\:8888.*token'
