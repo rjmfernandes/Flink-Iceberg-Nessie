@@ -8,6 +8,8 @@ This project is based on:
 **Table Of Contents:**
 
 - [1 - Populate Kafka Topics](#1---populate-kafka-topics)
+  - [Install Plugins](#install-plugins)
+  - [Create Connectors](#create-connectors)
 - [2 - Flink](#2---flink)
   - [Kafka Topic Tables](#kafka-topic-tables)
   - [Keyed Tables](#keyed-tables)
@@ -40,6 +42,10 @@ You should see on logs (close before the http requests log lines starting):
 Finished starting connectors and tasks
 ```
 
+## Install Plugins
+
+If you already have the plugin downloaded locally on folder plugins you can skip this step.
+
 Then let's install `kafka-connect-datagen` connector plugin for populating our topics with sample data:
 
 ```shell
@@ -59,6 +65,8 @@ docker compose restart connect
 ```
 
 Again we monitor the Kafka Connect logs and confirm it has started.
+
+## Create Connectors
 
 After we can create the connectors:
 
