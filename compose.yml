@@ -1,5 +1,5 @@
 ###########################################
-# Flink - Iceberg - Nessie Setup
+# Kafka /CP - Flink - Iceberg - Nessie - Spark Setup
 ###########################################
 services:
   #cp services
@@ -159,9 +159,7 @@ services:
       until (/usr/bin/mc config host add minio http://storage:9000 admin password) do echo '...waiting...' && sleep 1; done;
       /usr/bin/mc rm -r --force minio/warehouse;
       /usr/bin/mc mb minio/warehouse;
-      /usr/bin/mc mb minio/iceberg;
       /usr/bin/mc policy set public minio/warehouse;
-      /usr/bin/mc policy set public minio/iceberg;
       tail -f /dev/null
       "
   # Flink Job Manager
