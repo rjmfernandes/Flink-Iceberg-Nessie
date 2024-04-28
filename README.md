@@ -1,4 +1,4 @@
-## Kafka / CP + Flink + Iceberg / Nessie / MinIO + Jupyter / (Py) Spark
+## Kafka / CP + Flink + Iceberg / Nessie / MinIO + Spark
 
 This project is based on: 
 - https://github.com/developer-advocacy-dremio/flink-iceberg-nessie-environment
