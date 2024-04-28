@@ -339,7 +339,41 @@ select * from orders;
 Note:
 - If you check on Control Center you should be able to see (after some time) the consumer groups `demo1`, `demo2` and `demo3` corresponding to the reading of our 3 Flink tables.
 - Now we have another job running considerably more complex than the first two ones due to the two joins.
-- There is no new topic in Kafka. But if we go to MinIO http://localhost:9001 (user/password admin/password) we should see inside `warehouse / test / orders_... / data` many parquet files being generated supporting the Iceberg storage. You can download one of them and open it with [Tad](https://www.tadviewer.com/). You can also navigate to Nessie http://localhost:19120/ and see the Iceberg entry for `test/orders`.
+
+There is no new topic in Kafka. But if we go to MinIO http://localhost:9001 (user/password admin/password) we should see inside `warehouse / test / orders_... / data` many parquet files being generated supporting the Iceberg storage. 
+
+You can download one of them and open it with [Tad](https://www.tadviewer.com/). 
+
+You can also navigate to Nessie http://localhost:19120/ and see the Iceberg entry for `test/orders`. Check the commit history.
+
+You can also install the nessie command line tool:
+
+```shell
+pip install pynessie
+```
+
+And run for example:
+
+```shell
+nessie config -l
+```
+
+```shell
+nessie remote show
+```
+
+```shell
+nessie content list
+```
+
+```shell
+nessie content view -r main test.orders
+```
+
+```shell
+nessie log
+```
+
 
 # 4 - Spark 
 
