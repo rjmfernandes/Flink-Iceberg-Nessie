@@ -330,7 +330,7 @@ FROM
     ON so.product_id = sp.product_id;
 ```
 
-And we query:
+And we query (you may need to wait a bit for data to start being peristed):
 
 ```sql
 select * from orders;
