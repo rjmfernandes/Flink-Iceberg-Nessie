@@ -9,14 +9,12 @@ This project is based on:
 
 - [1 - Populate Kafka Topics](#1---populate-kafka-topics)
 - [2 - Flink](#2---flink)
-  - [2.1 - Kafka](#21---kafka)
-    - [Topic Tables](#topic-tables)
-    - [Keyed Tables](#keyed-tables)
-  - [2.2 Iceberg](#22-iceberg)
-    - [Enriched (Iceberg) Table](#enriched-iceberg-table)
-  - [3 - Spark](#3---spark)
-  - [Extra Notes](#extra-notes)
-  - [Cleanup](#cleanup)
+  - [Kafka Topic Tables](#kafka-topic-tables)
+  - [Keyed Tables](#keyed-tables)
+- [3 - Iceberg](#3---iceberg)
+- [4 - Spark](#4---spark)
+- [Extra Notes](#extra-notes)
+- [Cleanup](#cleanup)
 
 First start services:
 
@@ -103,9 +101,7 @@ Start Flink SQL Client (the only container which is not a service in our docker 
 docker compose run sql-client
 ```
 
-## 2.1 - Kafka
-
-### Topic Tables
+## Kafka Topic Tables
 
 Let's create our first table to read from one of our Kafka topics:
 
@@ -180,7 +176,7 @@ CREATE TABLE orders (
 );
 ```
 
-### Keyed Tables
+## Keyed Tables
 
 Let's create new tables with primary keys so we get the final photo in it of each product and customer:
 
@@ -250,7 +246,7 @@ INSERT INTO customers_keyed
 
 Now we have two running jobs (and only 3 available task slots on our task manager) and a new topic again will show up in Kafka. 
 
-## 2.2 Iceberg
+# 3 - Iceberg
 
 Let's create a new Iceberg catalog (based on Nessie implementation using S3/MinIO storage):
 
@@ -281,8 +277,6 @@ create database test;
 ```sql
 use test;
 ```
-
-### Enriched (Iceberg) Table
 
 Now let's create our enrichment table:
 
@@ -339,7 +333,7 @@ Note:
 - Now we have another job running considerably more complex than the first two ones due to the two joins.
 - There is no new topic in Kafka. But if we go to MinIO http://localhost:9001 (user/password admin/password) we should see inside `warehouse / test / orders_... / data` many parquet files being generated supporting the Iceberg storage. You can download one of them and open it with [Tad](https://www.tadviewer.com/). You can also navigate to Nessie http://localhost:19120/ and see the Iceberg entry for `test/orders`.
 
-## 3 - Spark 
+# 4 - Spark 
 
 As an example of consuming our Iceberg tables from another tool we use Spark. And access it from the Jupyter instance levergaging pyspark. For opening the Jupyter notebook server let's get the link with the token. For that we check the container log in another shell:
 
@@ -360,7 +354,7 @@ Note:
 - The Spark UI while executing the notebook will be available at http://localhost:4040/ 
 
 
-## Extra Notes
+# Extra Notes
 
 - Each Flink SQL query will generate a job associated with the query execution in Flink and while is executing.
 - You can scale the number of task managers by setting in docker compose file the `scale` to a number bigger than 1.
@@ -380,7 +374,7 @@ docker compose up -d
 ```
 - In case you want to add libraries to the `flink/Dockerfile` pay attention to the version of Flink being used (1.16.1 here) and all the dependencies and subdependencies of your exact library version.
 
-## Cleanup
+# Cleanup
 
 ```shell
 docker compose down -v
