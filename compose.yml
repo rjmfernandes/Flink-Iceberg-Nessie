@@ -2,6 +2,98 @@
 # Flink - Iceberg - Nessie Setup
 ###########################################
 services:
+  #cp services
+  broker:
+    image: confluentinc/cp-kafka:${TAG}
+    hostname: broker
+    container_name: broker 
+    networks:
+      iceberg-nessie-flink-net:
+    ports:
+      - 29092:29092
+    volumes:
+      - ./data:/tmp/kraft-combined-logs
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://broker:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@broker:29093
+      KAFKA_LISTENERS: PLAINTEXT://broker:9092,CONTROLLER://broker:29093,PLAINTEXT_HOST://0.0.0.0:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+  schema-registry:
+    image: confluentinc/cp-schema-registry:${TAG}
+    hostname: schema-registry
+    container_name: schema-registry
+    networks:
+      iceberg-nessie-flink-net:
+    depends_on:
+      - broker
+    ports:
+      - "28081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'broker:9092'
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+  connect:
+    image: confluentinc/cp-server-connect:${TAG}
+    networks:
+      iceberg-nessie-flink-net:
+    depends_on:
+      - broker
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./plugins:/usr/share/confluent-hub-components
+    environment:
+      CONNECT_BOOTSTRAP_SERVERS: broker:9092
+      CONNECT_REST_ADVERTISED_HOST_NAME: connect
+      CONNECT_GROUP_ID: connect-group
+      CONNECT_CONFIG_STORAGE_TOPIC: connect-configs
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_FLUSH_INTERVAL_MS: 10000
+      CONNECT_OFFSET_STORAGE_TOPIC: connect-offsets
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_TOPIC: connect-status
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      # CLASSPATH required due to CC-2422
+      CLASSPATH: /usr/share/java/monitoring-interceptors/monitoring-interceptors-7.6.0.jar
+      CONNECT_PRODUCER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor"
+      CONNECT_CONSUMER_INTERCEPTOR_CLASSES: "io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor"
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/confluent-hub-components"
+      CONNECT_LOG4J_LOGGERS: org.apache.zookeeper=ERROR,org.I0Itec.zkclient=ERROR,org.reflections=ERROR
+  control-center:
+    image: confluentinc/cp-enterprise-control-center:${TAG}
+    hostname: control-center
+    container_name: control-center
+    networks:
+      iceberg-nessie-flink-net:
+    depends_on:
+      - broker
+      - schema-registry
+      - connect
+    ports:
+      - "9021:9021"
+    environment:
+      CONTROL_CENTER_BOOTSTRAP_SERVERS: 'broker:9092'
+      CONTROL_CENTER_CONNECT_CONNECT-DEFAULT_CLUSTER: 'connect:8083'
+      CONTROL_CENTER_SCHEMA_REGISTRY_URL: "http://schema-registry:8081"
+      CONTROL_CENTER_REPLICATION_FACTOR: 1
+      CONTROL_CENTER_INTERNAL_TOPICS_PARTITIONS: 1
+      CONTROL_CENTER_MONITORING_INTERCEPTOR_TOPIC_PARTITIONS: 1
+      CONFLUENT_METRICS_TOPIC_REPLICATION: 1
+      PORT: 9021
   # Spark Notebook Server
   spark-iceberg:
     image: jupyter/all-spark-notebook
@@ -77,6 +169,8 @@ services:
     build: ./flink
     ports:
       - "8081:8081"
+    volumes:
+      - ./flink_data:/tmp/
     command: jobmanager
     networks:
       iceberg-nessie-flink-net:
@@ -84,6 +178,12 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: flink-jobmanager
+        state.backend: filesystem
+        state.checkpoint-storage: filesystem
+        state.checkpoints.dir: file:///tmp/flink-checkpoints-directory
+        state.savepoints.dir: file:///tmp/flink-savepoints-directory
+        rest.flamegraph.enabled: true
+        execution.checkpointing.interval: 10000
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
       - AWS_REGION=us-east-1
@@ -96,6 +196,8 @@ services:
     depends_on:
       - flink-jobmanager
     command: taskmanager
+    volumes:
+      - ./flink_data:/tmp/
     networks:
       iceberg-nessie-flink-net:
     scale: 1
@@ -103,7 +205,13 @@ services:
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: flink-jobmanager
-        taskmanager.numberOfTaskSlots: 2
+        taskmanager.numberOfTaskSlots: 5
+        state.backend: filesystem
+        state.checkpoint-storage: filesystem
+        state.checkpoints.dir: file:///tmp/flink-checkpoints-directory
+        state.savepoints.dir: file:///tmp/flink-savepoints-directory
+        rest.flamegraph.enabled: true
+        execution.checkpointing.interval: 10000
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
       - AWS_REGION=us-east-1
@@ -115,6 +223,8 @@ services:
     command: bin/sql-client.sh
     networks:
       iceberg-nessie-flink-net:
+    volumes:
+      - ./flink_data:/tmp/
     depends_on:
       - flink-jobmanager
     environment:
@@ -122,6 +232,12 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: flink-jobmanager
         rest.address: flink-jobmanager 
+        state.backend: filesystem
+        state.checkpoint-storage: filesystem
+        state.checkpoints.dir: file:///tmp/flink-checkpoints-directory
+        state.savepoints.dir: file:///tmp/flink-savepoints-directory
+        rest.flamegraph.enabled: true
+        execution.checkpointing.interval: 10000
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
       - AWS_REGION=us-east-1

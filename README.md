@@ -8,13 +8,78 @@ Start:
 docker compose up -d
 ```
 
+# Setup CP
+
+Let's install some connectors:
+
+```shell
+docker compose exec connect bash
+```
+
+And then:
+
+```shell
+confluent-hub install confluentinc/kafka-connect-datagen:latest
+```
+
+And restart connect:
+
+```shell
+docker compose restart connect
+```
+
+After we can create the connectors:
+
+```shell
+curl -i -X PUT -H "Accept:application/json" -H  "Content-Type:application/json" http://localhost:8083/connectors/my-datagen-source1/config -d '{
+    "name" : "my-datagen-source1",
+    "connector.class": "io.confluent.kafka.connect.datagen.DatagenConnector",
+    "kafka.topic" : "products",
+    "output.data.format" : "AVRO",
+    "quickstart" : "SHOES",
+    "tasks.max" : "1"
+}'
+```
+
+Open http://localhost:9021 and check cluster is healthy including Kafka Connect.
+
+# Flink SQL
+
 Start Flink SQL Client:
 
 ```shell
 docker compose run sql-client
 ```
 
-Create the Iceberg catalog (replacing the IP by the one found before):
+And execute:
+
+```sql
+CREATE TABLE products (
+  `id` STRING,
+  `brand` STRING,
+  `name` STRING,
+  `sale_price` BIGINT,
+  `rating` DOUBLE,
+  `$rowtime` TIMESTAMP(3) METADATA FROM 'timestamp'
+) WITH (
+  'connector' = 'kafka',
+  'topic' = 'products',
+  'properties.bootstrap.servers' = 'broker:9092',
+  'properties.group.id' = 'demo3',
+  'scan.startup.mode' = 'earliest-offset',
+  'value.format' = 'avro-confluent',
+  'value.avro-confluent.schema-registry.url' = 'http://schema-registry:8081',
+  'value.fields-include' = 'EXCEPT_KEY'
+);
+```
+
+After run:
+
+```sql
+select * from products;
+```
+
+Create the Iceberg catalog:
 
 ```sql
 CREATE CATALOG iceberg WITH ('type'='iceberg',
@@ -44,7 +109,7 @@ create database test;
 use test;
 ```
 
-Now let's create a table and insert some values in it:
+Now let's create a table:
 
 ```sql
 CREATE TABLE products (
@@ -56,28 +121,28 @@ CREATE TABLE products (
 );
 ```
 
+Let's insert values in it coming from our other table coming from kafka:
+
 ```sql
-INSERT INTO products
-  VALUES ('demo1', 'apple','iphone', 1000,4), ('demo2', 'apple','mac', 2000,5);
+INSERT INTO products 
+SELECT id, brand, `name`, sale_price, rating  FROM default_catalog.default_database.products;
 ```
 
-Check Flink dashboard at: http://localhost:8081/#/job/running
-
-You may still have time to see the insert into iceberg catalog table job running.
-
-Else check under Completed http://localhost:8081/#/job/completed
-
-You can run on Flink SQL shell:
+And we query:
 
 ```sql
 select * from products;
 ```
 
+Check Flink dashboard at: http://localhost:8081/#/job/running
+
+You will see the insert into iceberg catalog table job running.
+
 Also go to MinIO http://localhost:9001/login (user/password admin/password) 
 
-Navigate through `warehouse / test / products_... / data` and you should see the parquet file. 
+Navigate through `warehouse / test / products_... / data` and you should see the parquet files. 
 
-Download and open it with a tool as [Tad](https://www.tadviewer.com/).
+Download one and open it with a tool as [Tad](https://www.tadviewer.com/).
 
 You can also navigate with iceberg-nessie http://localhost:19120/ 
 
@@ -103,4 +168,6 @@ The Spark UI while executing the notebook will be available at http://localhost:
 
 ```shell
 docker compose down -v
+rm -fr data
+rm -fr flink_data
 ```
