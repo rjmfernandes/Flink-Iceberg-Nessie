@@ -372,6 +372,7 @@ Note:
 - The kafka backed queries are streaming queries and will continuously run until you cancel them. The iceberg backed queries are not, and will display the current rows in the table.
 - The `insert into` iceberg backed tables will run for a long time without commiting inserts unless you set (as we did here) on the `compose.yaml` for the service the Flink property `execution.checkpointing.interval: 10000`. The commits to the storage only happen with checkpoints.  
 - If you execute the pyspark notebook more than once in Jupyter it may be that the new Spark instance started finds the default port 4040 occupied and will try to occupy 4041, etc. In this case the corresponding Spark dashboard wont be available to access from host since the only port exposed in the docker compose file is the 4040.
+- The Iceberg catalog in Flink will access as the endpoint for storage as per configuration the host `warehouse.storage` thats why we configured the corresponding network alias on the compose file.
 - If you make changes on the `flink/Dockerfile` (adding jars etc) you will need to execute the rebuild and restart:
 
 ```shell
