@@ -103,7 +103,7 @@ Open Control Center http://localhost:9021 and check cluster is healthy including
 
 We will start consuming our Kafka topics with Flink SQL and create new tables with primary keys and the final enriched one (mapped to new Kafka topics).
 
-Start Flink SQL Client (the only container which is not a service in our docker compose):
+Start Flink SQL Client:
 
 ```shell
 docker compose run sql-client
